@@ -113,7 +113,7 @@ export default function CreateRoomModal({ onClose, onSubmit, isLoading, error })
                                     onChange={(e) => setBilateral(e.target.checked)}
                                 />
                                 <span className="checkbox-custom" />
-                                <span>Bilateral clock (both players must press ON)</span>
+                                <span>Bilateral clock (stops only when both players are ON)</span>
                             </label>
                         </div>
                     )}

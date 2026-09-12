@@ -81,6 +81,8 @@ export default function RoomPage() {
     } = useChessSocket();
 
     const opponentColor = playerColor === 'white' ? 'black' : 'white';
+    const isBilateralPaused = Boolean(timeControl?.bilateral && clockSwitches?.white && clockSwitches?.black);
+    const isClockPaused = (!opponentConnected || isBilateralPaused) && gameState.isStarted && !gameState.isEnded;
 
     // Stockfish Engine
     const { findBestMove, bestMove, isThinking } = useStockfish();
@@ -433,7 +435,7 @@ export default function RoomPage() {
                                 <ChessClock
                                     time={clocks ? clocks[opponentColor] : 600000}
                                     isActive={gameState.turn === opponentColor && gameState.isStarted}
-                                    isPaused={(!opponentConnected || (timeControl?.bilateral && (!clockSwitches?.white || !clockSwitches?.black))) && gameState.isStarted && !gameState.isEnded}
+                                    isPaused={isClockPaused}
                                     isEnded={gameState.isEnded}
                                     timeControl={timeControl}
                                 />
@@ -455,7 +457,7 @@ export default function RoomPage() {
                                 <ChessClock
                                     time={clocks ? clocks[playerColor || 'white'] : 600000}
                                     isActive={gameState.turn === playerColor && gameState.isStarted}
-                                    isPaused={(!opponentConnected || (timeControl?.bilateral && (!clockSwitches?.white || !clockSwitches?.black))) && gameState.isStarted && !gameState.isEnded}
+                                    isPaused={isClockPaused}
                                     isEnded={gameState.isEnded}
                                     timeControl={timeControl}
                                 />
@@ -535,7 +537,7 @@ export default function RoomPage() {
                         <ChessClock
                             time={clocks ? clocks[opponentColor] : 600000}
                             isActive={gameState.turn === opponentColor && gameState.isStarted}
-                            isPaused={(!opponentConnected || (timeControl?.bilateral && (!clockSwitches?.white || !clockSwitches?.black))) && gameState.isStarted && !gameState.isEnded}
+                            isPaused={isClockPaused}
                             isEnded={gameState.isEnded}
                             timeControl={timeControl}
                         />
@@ -564,18 +566,18 @@ export default function RoomPage() {
                                 <button
                                     className={`bilateral-btn ${clockSwitches?.[playerColor || 'white'] ? 'btn-active-on' : 'btn-active-off'}`}
                                     onClick={() => toggleClockSwitch(!clockSwitches?.[playerColor || 'white'])}
-                                    title="Click to toggle your clock switch"
+                                    title="Click to toggle your switch (ON = pause request)"
                                     type="button"
                                 >
                                     {clockSwitches?.[playerColor || 'white'] ? (
                                         <>
                                             <Pause size={13} />
-                                            Clock: ON
+                                            Switch: ON
                                         </>
                                     ) : (
                                         <>
                                             <Play size={13} />
-                                            Clock: OFF
+                                            Switch: OFF
                                         </>
                                     )}
                                 </button>
@@ -584,7 +586,7 @@ export default function RoomPage() {
                         <ChessClock
                             time={clocks ? clocks[playerColor || 'white'] : 600000}
                             isActive={gameState.turn === playerColor && gameState.isStarted}
-                            isPaused={(!opponentConnected || (timeControl?.bilateral && (!clockSwitches?.white || !clockSwitches?.black))) && gameState.isStarted && !gameState.isEnded}
+                            isPaused={isClockPaused}
                             isEnded={gameState.isEnded}
                             timeControl={timeControl}
                         />

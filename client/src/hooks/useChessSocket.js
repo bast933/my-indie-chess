@@ -25,7 +25,7 @@ export function useChessSocket() {
   
   const [clocks, setClocks] = useState({ white: 600000, black: 600000 });
   const [timeControl, setTimeControl] = useState(null);
-  const [clockSwitches, setClockSwitches] = useState({ white: true, black: true });
+  const [clockSwitches, setClockSwitches] = useState({ white: false, black: false });
   const [chat, setChat] = useState([]);
   const [pendingRequest, setPendingRequest] = useState(null);
   const [error, setError] = useState(null);
@@ -207,7 +207,7 @@ export function useChessSocket() {
 
     newSocket.on('game_restarted', (data) => {
       if (data.timeControl) setTimeControl(data.timeControl);
-      setClockSwitches(data.clockSwitches || { white: true, black: true });
+      setClockSwitches(data.clockSwitches || { white: false, black: false });
       setGameState({
         fen: data.fen,
         moves: [],
@@ -283,7 +283,8 @@ export function useChessSocket() {
 
   // Smooth local clock countdown
   useEffect(() => {
-    const bilateralBlocked = timeControl?.bilateral && (!clockSwitches.white || !clockSwitches.black);
+    // Inverted bilateral logic: se entrambi sono ON il tempo si ferma, negli altri 3 casi scorre
+    const bilateralBlocked = timeControl?.bilateral && clockSwitches.white && clockSwitches.black;
     const isClockActive = gameState.isStarted && !gameState.isEnded && opponentConnected && (!timeControl || timeControl.initial > 0) && !bilateralBlocked;
 
     if (!isClockActive) {

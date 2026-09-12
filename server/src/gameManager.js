@@ -24,8 +24,8 @@ class GameManager {
       timeControl: tc,
       isBilateral: !!(tc && tc.bilateral),
       clockSwitches: {
-        white: true,
-        black: true
+        white: false,
+        black: false
       },
       clockInterval: null,
       onTimeout: null,
@@ -47,7 +47,8 @@ class GameManager {
 
   isClockRunning(game) {
     if (!game || !game.isStarted || game.isEnded || game.isPaused) return false;
-    if (game.isBilateral && (!game.clockSwitches?.white || !game.clockSwitches?.black)) {
+    // Bilateral logic: se entrambi i giocatori sono su ON il tempo si ferma, negli altri 3 casi il tempo scorre
+    if (game.isBilateral && game.clockSwitches?.white && game.clockSwitches?.black) {
       return false;
     }
     return Boolean(game.timeControl && game.timeControl.initial > 0);
@@ -362,8 +363,8 @@ class GameManager {
       black: game.timeControl.initial
     };
     game.clockSwitches = {
-      white: true,
-      black: true
+      white: false,
+      black: false
     };
     game.isStarted = false;
     game.isPaused = false;
@@ -391,7 +392,7 @@ class GameManager {
       isCheck: game.chess.isCheck(),
       timeControl: game.timeControl,
       isBilateral: !!game.isBilateral,
-      clockSwitches: game.clockSwitches || { white: true, black: true }
+      clockSwitches: game.clockSwitches || { white: false, black: false }
     };
   }
 
