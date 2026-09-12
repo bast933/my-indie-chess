@@ -34,12 +34,17 @@ export default function CreateRoomModal({ onClose, onSubmit, isLoading, error })
     const [timeControlId, setTimeControlId] = useState('rapid_10_0');
     const [password, setPassword] = useState('');
     const [usePassword, setUsePassword] = useState(false);
+    const [bilateral, setBilateral] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!name.trim()) return;
 
-        const timeControl = TIME_CONFIGS[timeControlId] || TIME_CONFIGS['rapid_10_0'];
+        const baseTC = TIME_CONFIGS[timeControlId] || TIME_CONFIGS['rapid_10_0'];
+        const timeControl = {
+            ...baseTC,
+            bilateral: bilateral && baseTC.initial > 0
+        };
         onSubmit(name.trim(), usePassword ? password : null, roomName.trim() || null, timeControl);
     };
 
@@ -99,6 +104,20 @@ export default function CreateRoomModal({ onClose, onSubmit, isLoading, error })
                         </select>
                     </div>
 
+                    {TIME_CONFIGS[timeControlId]?.initial > 0 && (
+                        <div className="password-toggle">
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={bilateral}
+                                    onChange={(e) => setBilateral(e.target.checked)}
+                                />
+                                <span className="checkbox-custom" />
+                                <span>Bilateral clock (both players must press ON)</span>
+                            </label>
+                        </div>
+                    )}
+
                     <div className="password-toggle">
                         <label className="checkbox-label">
                             <input
@@ -110,6 +129,7 @@ export default function CreateRoomModal({ onClose, onSubmit, isLoading, error })
                             <span>Private room (password protected)</span>
                         </label>
                     </div>
+
 
                     {usePassword && (
                         <div className="input-group">

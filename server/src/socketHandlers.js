@@ -409,6 +409,21 @@ export function setupSocketHandlers(io) {
       }
     });
 
+    // Bilateral clock switch toggle
+    socket.on('toggle_clock_switch', ({ state }) => {
+      const playerInfo = getPlayerInfo(socket.id);
+      if (!playerInfo) return;
+
+      const { roomCode, color } = playerInfo;
+      const result = gameManager.toggleClockSwitch(roomCode, color, state);
+      if (result) {
+        io.to(roomCode).emit('clock_switches_updated', {
+          clockSwitches: result.clockSwitches,
+          clocks: result.clocks
+        });
+      }
+    });
+
     // Disconnect
     socket.on('disconnect', () => {
       const result = roomManager.disconnectPlayer(socket.id);

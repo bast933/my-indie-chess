@@ -10,7 +10,9 @@ import {
     Loader2,
     LogIn,
     ChevronUp,
-    ChevronDown
+    ChevronDown,
+    Play,
+    Pause
 } from 'lucide-react';
 import { useChessSocket } from '../hooks/useChessSocket';
 import ChessBoard from '../components/ChessBoard';
@@ -56,6 +58,7 @@ export default function RoomPage() {
         gameState,
         clocks,
         timeControl,
+        clockSwitches,
         chat,
         pendingRequest,
         error,
@@ -73,6 +76,7 @@ export default function RoomPage() {
         acceptDraw,
         declineDraw,
         leaveRoom,
+        toggleClockSwitch,
         setCallbacks
     } = useChessSocket();
 
@@ -429,7 +433,7 @@ export default function RoomPage() {
                                 <ChessClock
                                     time={clocks ? clocks[opponentColor] : 600000}
                                     isActive={gameState.turn === opponentColor && gameState.isStarted}
-                                    isPaused={!opponentConnected && gameState.isStarted && !gameState.isEnded}
+                                    isPaused={(!opponentConnected || (timeControl?.bilateral && (!clockSwitches?.white || !clockSwitches?.black))) && gameState.isStarted && !gameState.isEnded}
                                     isEnded={gameState.isEnded}
                                     timeControl={timeControl}
                                 />
@@ -451,7 +455,7 @@ export default function RoomPage() {
                                 <ChessClock
                                     time={clocks ? clocks[playerColor || 'white'] : 600000}
                                     isActive={gameState.turn === playerColor && gameState.isStarted}
-                                    isPaused={!opponentConnected && gameState.isStarted && !gameState.isEnded}
+                                    isPaused={(!opponentConnected || (timeControl?.bilateral && (!clockSwitches?.white || !clockSwitches?.black))) && gameState.isStarted && !gameState.isEnded}
                                     isEnded={gameState.isEnded}
                                     timeControl={timeControl}
                                 />
@@ -522,11 +526,16 @@ export default function RoomPage() {
                             <span className={`status-dot ${opponentConnected ? 'online' : 'offline'}`} />
                             <span className="player-bar-name">{opponentName || 'Waiting for opponent...'}</span>
                             <span className={`color-indicator ${opponentColor}`} title="Opponent Color" />
+                            {timeControl?.bilateral && (
+                                <span className={`bilateral-pill ${clockSwitches?.[opponentColor] ? 'on' : 'off'}`} title={`Opponent clock switch: ${clockSwitches?.[opponentColor] ? 'ON' : 'OFF'}`}>
+                                    Opponent: {clockSwitches?.[opponentColor] ? 'ON' : 'OFF'}
+                                </span>
+                            )}
                         </div>
                         <ChessClock
                             time={clocks ? clocks[opponentColor] : 600000}
                             isActive={gameState.turn === opponentColor && gameState.isStarted}
-                            isPaused={!opponentConnected && gameState.isStarted && !gameState.isEnded}
+                            isPaused={(!opponentConnected || (timeControl?.bilateral && (!clockSwitches?.white || !clockSwitches?.black))) && gameState.isStarted && !gameState.isEnded}
                             isEnded={gameState.isEnded}
                             timeControl={timeControl}
                         />
@@ -551,11 +560,31 @@ export default function RoomPage() {
                             <span className="status-dot online" />
                             <span className="player-bar-name">You ({playerColor || 'white'})</span>
                             <span className={`color-indicator ${playerColor || 'white'}`} title="Your Color" />
+                            {timeControl?.bilateral && (
+                                <button
+                                    className={`bilateral-btn ${clockSwitches?.[playerColor || 'white'] ? 'btn-active-on' : 'btn-active-off'}`}
+                                    onClick={() => toggleClockSwitch(!clockSwitches?.[playerColor || 'white'])}
+                                    title="Click to toggle your clock switch"
+                                    type="button"
+                                >
+                                    {clockSwitches?.[playerColor || 'white'] ? (
+                                        <>
+                                            <Pause size={13} />
+                                            Clock: ON
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play size={13} />
+                                            Clock: OFF
+                                        </>
+                                    )}
+                                </button>
+                            )}
                         </div>
                         <ChessClock
                             time={clocks ? clocks[playerColor || 'white'] : 600000}
                             isActive={gameState.turn === playerColor && gameState.isStarted}
-                            isPaused={!opponentConnected && gameState.isStarted && !gameState.isEnded}
+                            isPaused={(!opponentConnected || (timeControl?.bilateral && (!clockSwitches?.white || !clockSwitches?.black))) && gameState.isStarted && !gameState.isEnded}
                             isEnded={gameState.isEnded}
                             timeControl={timeControl}
                         />

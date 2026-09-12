@@ -22,6 +22,11 @@ class GameManager {
         black: tc.initial
       },
       timeControl: tc,
+      isBilateral: !!(tc && tc.bilateral),
+      clockSwitches: {
+        white: true,
+        black: true
+      },
       clockInterval: null,
       onTimeout: null,
       isStarted: false,
@@ -40,9 +45,17 @@ class GameManager {
     return this.games.get(roomCode);
   }
 
+  isClockRunning(game) {
+    if (!game || !game.isStarted || game.isEnded || game.isPaused) return false;
+    if (game.isBilateral && (!game.clockSwitches?.white || !game.clockSwitches?.black)) {
+      return false;
+    }
+    return Boolean(game.timeControl && game.timeControl.initial > 0);
+  }
+
   startClockTimer(roomCode) {
     const game = this.games.get(roomCode);
-    if (!game || !game.timeControl || game.timeControl.initial <= 0) return;
+    if (!game || !this.isClockRunning(game)) return;
 
     if (game.clockInterval) {
       clearInterval(game.clockInterval);
@@ -50,7 +63,7 @@ class GameManager {
 
     game.clockInterval = setInterval(() => {
       const g = this.games.get(roomCode);
-      if (!g || !g.isStarted || g.isEnded || g.isPaused) {
+      if (!g || !this.isClockRunning(g)) {
         return;
       }
 
@@ -84,11 +97,41 @@ class GameManager {
     }
   }
 
+  toggleClockSwitch(roomCode, color, desiredState = null) {
+    const game = this.games.get(roomCode);
+    if (!game || (color !== 'white' && color !== 'black')) return null;
+
+    const wasRunning = this.isClockRunning(game);
+    if (wasRunning && game.lastMoveTime) {
+      const turn = game.chess.turn() === 'w' ? 'white' : 'black';
+      const elapsed = Date.now() - game.lastMoveTime;
+      game.clocks[turn] = Math.max(0, game.clocks[turn] - elapsed);
+    }
+
+    const currentState = Boolean(game.clockSwitches[color]);
+    const newState = desiredState !== null ? Boolean(desiredState) : !currentState;
+    game.clockSwitches[color] = newState;
+
+    const nowRunning = this.isClockRunning(game);
+    if (nowRunning) {
+      game.lastMoveTime = Date.now();
+      this.startClockTimer(roomCode);
+    } else {
+      this.stopClockTimer(roomCode);
+    }
+
+    return {
+      clockSwitches: { ...game.clockSwitches },
+      clocks: this.getClocks(roomCode),
+      isRunning: nowRunning
+    };
+  }
+
   pauseGame(roomCode) {
     const game = this.games.get(roomCode);
     if (!game || !game.isStarted || game.isEnded || game.isPaused) return;
 
-    if (game.lastMoveTime && game.timeControl?.initial > 0) {
+    if (this.isClockRunning(game) && game.lastMoveTime && game.timeControl?.initial > 0) {
       const turn = game.chess.turn() === 'w' ? 'white' : 'black';
       const elapsed = Date.now() - game.lastMoveTime;
       game.clocks[turn] = Math.max(0, game.clocks[turn] - elapsed);
@@ -104,7 +147,9 @@ class GameManager {
 
     game.isPaused = false;
     game.lastMoveTime = Date.now();
-    this.startClockTimer(roomCode);
+    if (this.isClockRunning(game)) {
+      this.startClockTimer(roomCode);
+    }
   }
 
   deleteGame(roomCode) {
@@ -142,7 +187,9 @@ class GameManager {
     if (onTimeout) {
       game.onTimeout = onTimeout;
     }
-    this.startClockTimer(roomCode);
+    if (this.isClockRunning(game)) {
+      this.startClockTimer(roomCode);
+    }
     
     return true;
   }
@@ -155,9 +202,10 @@ class GameManager {
 
     const chess = game.chess;
     const turn = chess.turn() === 'w' ? 'white' : 'black';
+    const wasRunning = this.isClockRunning(game);
     
-    // Update clock for the player who just moved
-    if (game.isStarted && game.lastMoveTime && game.timeControl?.initial > 0) {
+    // Update clock for the player who just moved if clock was running
+    if (wasRunning && game.lastMoveTime && game.timeControl?.initial > 0) {
       const elapsed = Date.now() - game.lastMoveTime;
       const remaining = game.clocks[turn] - elapsed;
       
@@ -252,8 +300,8 @@ class GameManager {
 
     const clocks = { ...game.clocks };
     
-    // If game is in progress and active, calculate current time for active player
-    if (game.isStarted && !game.isEnded && !game.isPaused && game.lastMoveTime && game.timeControl?.initial > 0) {
+    // If clock is currently running, calculate current time for active player
+    if (this.isClockRunning(game) && game.lastMoveTime && game.timeControl?.initial > 0) {
       const turn = game.chess.turn() === 'w' ? 'white' : 'black';
       const elapsed = Date.now() - game.lastMoveTime;
       clocks[turn] = Math.max(0, clocks[turn] - elapsed);
@@ -313,6 +361,10 @@ class GameManager {
       white: game.timeControl.initial,
       black: game.timeControl.initial
     };
+    game.clockSwitches = {
+      white: true,
+      black: true
+    };
     game.isStarted = false;
     game.isPaused = false;
     game.isEnded = false;
@@ -337,7 +389,9 @@ class GameManager {
       result: game.result,
       turn: game.chess.turn() === 'w' ? 'white' : 'black',
       isCheck: game.chess.isCheck(),
-      timeControl: game.timeControl
+      timeControl: game.timeControl,
+      isBilateral: !!game.isBilateral,
+      clockSwitches: game.clockSwitches || { white: true, black: true }
     };
   }
 

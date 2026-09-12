@@ -25,6 +25,7 @@ export function useChessSocket() {
   
   const [clocks, setClocks] = useState({ white: 600000, black: 600000 });
   const [timeControl, setTimeControl] = useState(null);
+  const [clockSwitches, setClockSwitches] = useState({ white: true, black: true });
   const [chat, setChat] = useState([]);
   const [pendingRequest, setPendingRequest] = useState(null);
   const [error, setError] = useState(null);
@@ -99,6 +100,7 @@ export function useChessSocket() {
       setOpponentName(data.opponentName);
       setOpponentConnected(true);
       if (data.timeControl) setTimeControl(data.timeControl);
+      if (data.clockSwitches) setClockSwitches(data.clockSwitches);
       setGameState({
         fen: data.fen,
         moves: data.moves || [],
@@ -131,6 +133,7 @@ export function useChessSocket() {
       setOpponentConnected(opponentPlayer?.connected || false);
       setOpponentName(opponentPlayer?.name);
       if (data.timeControl) setTimeControl(data.timeControl);
+      if (data.clockSwitches) setClockSwitches(data.clockSwitches);
       setGameState({
         fen: data.fen,
         moves: data.moves || [],
@@ -204,6 +207,7 @@ export function useChessSocket() {
 
     newSocket.on('game_restarted', (data) => {
       if (data.timeControl) setTimeControl(data.timeControl);
+      setClockSwitches(data.clockSwitches || { white: true, black: true });
       setGameState({
         fen: data.fen,
         moves: [],
@@ -264,6 +268,12 @@ export function useChessSocket() {
       syncClocksRef.current(data);
     });
 
+    // Bilateral switch updates
+    newSocket.on('clock_switches_updated', (data) => {
+      if (data.clockSwitches) setClockSwitches(data.clockSwitches);
+      if (data.clocks) syncClocksRef.current(data.clocks);
+    });
+
     setSocket(newSocket);
 
     return () => {
@@ -273,7 +283,8 @@ export function useChessSocket() {
 
   // Smooth local clock countdown
   useEffect(() => {
-    const isClockActive = gameState.isStarted && !gameState.isEnded && opponentConnected && (!timeControl || timeControl.initial > 0);
+    const bilateralBlocked = timeControl?.bilateral && (!clockSwitches.white || !clockSwitches.black);
+    const isClockActive = gameState.isStarted && !gameState.isEnded && opponentConnected && (!timeControl || timeControl.initial > 0) && !bilateralBlocked;
 
     if (!isClockActive) {
       clockSyncRef.current.lastSync = Date.now();
@@ -297,7 +308,7 @@ export function useChessSocket() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [gameState.isStarted, gameState.isEnded, gameState.turn, opponentConnected, timeControl]);
+  }, [gameState.isStarted, gameState.isEnded, gameState.turn, opponentConnected, timeControl, clockSwitches]);
 
   // Actions
   const createRoom = useCallback((name, password = null, roomName = null, timeControl = null) => {
@@ -420,6 +431,12 @@ export function useChessSocket() {
     callbacksRef.current = callbacks;
   }, []);
 
+  const toggleClockSwitch = useCallback((state) => {
+    if (socket) {
+      socket.emit('toggle_clock_switch', { state });
+    }
+  }, [socket]);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -441,6 +458,7 @@ export function useChessSocket() {
     gameState,
     clocks,
     timeControl,
+    clockSwitches,
     chat,
     pendingRequest,
     
@@ -461,6 +479,7 @@ export function useChessSocket() {
     acceptDraw,
     declineDraw,
     leaveRoom,
+    toggleClockSwitch,
     setCallbacks
   };
 }
