@@ -1,0 +1,31 @@
+# Indie Chess - Caddyfile
+
+chess.yunkhngn.dev {
+    # Backend API and WebSocket
+    handle /socket.io/* {
+        reverse_proxy backend:3002 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Health check endpoint
+    handle /health {
+        reverse_proxy backend:3002
+    }
+
+    # Frontend - serve static files
+    handle {
+        reverse_proxy frontend:80
+    }
+
+    # Enable compression
+    encode gzip zstd
+
+    # Logging
+    log {
+        output stdout
+    }
+}

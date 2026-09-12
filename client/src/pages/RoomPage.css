@@ -1,0 +1,655 @@
+.room-page {
+    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-primary);
+    overflow: hidden;
+}
+
+/* Dashboard Layout Grid */
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Left Panel: Dashboard Sidebar */
+.dashboard-sidebar {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md);
+    gap: var(--spacing-md);
+    overflow: hidden;
+    height: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.room-info-compact {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.room-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.05em;
+}
+
+.room-code {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.mobile-collapse-btn {
+    display: none;
+}
+
+/* Collapsible section */
+.sidebar-collapsible {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Player Profiles Card (Inside Sidebar) */
+.profiles-section {
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    margin-bottom: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.profile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Space between Info and Color Indicator */
+    gap: var(--spacing-md);
+}
+
+.profile-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nametag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-bg-tertiary);
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--color-text-muted);
+    /* Default offline/gray */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.status-dot.online {
+    background-color: #10b981;
+    /* Green color match */
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.status-dot.offline {
+    background-color: var(--color-text-muted);
+}
+
+.profile-info .role {
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-left: 4px;
+}
+
+.profile-info .name {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    font-size: 0.95rem;
+}
+
+.profile-divider {
+    height: 1px;
+    background: var(--color-border);
+    opacity: 0.5;
+    margin: var(--spacing-md) 0;
+}
+
+.sidebar-tabs {
+    display: flex;
+    gap: var(--spacing-xs);
+    background: var(--color-bg-tertiary);
+    padding: 4px;
+    border-radius: var(--radius-lg);
+    flex-shrink: 0;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: var(--spacing-sm);
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn.active {
+    background: var(--color-accent);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Sidebar Content Area (Moves/Chat) */
+.sidebar-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--color-border);
+}
+
+.tab-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Adjustments for components inside tabs */
+.tab-pane .chat-panel,
+.tab-pane .move-list {
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    height: 100%;
+}
+
+.tab-pane .chat-messages,
+.tab-pane .move-list-content {
+    padding: var(--spacing-sm);
+}
+
+/* Sidebar Header Actions */
+.header-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--color-border);
+    margin: 0 var(--spacing-xs);
+}
+
+.text-error {
+    color: var(--color-error);
+}
+
+.text-error:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-text-xs {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+/* Moves Tab Layout (Split View: List + Controls) */
+.moves-controls-pane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.moves-scroll-area {
+    flex: 1;
+    /* Takes available space */
+    overflow-y: auto;
+    min-height: 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.controls-area {
+    flex-shrink: 0;
+    padding: var(--spacing-sm);
+    background: var(--color-bg-tertiary);
+}
+
+/* Override existing GameControls styles for this context */
+.controls-area .card {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+/* Chat Pane */
+.chat-pane {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Right Panel: Game Main Area */
+.dashboard-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Optional: glass effect or just transparent to show bg */
+    border-radius: var(--radius-xl);
+    position: relative;
+}
+
+.board-centering-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
+    width: 100%;
+    max-width: 100%;
+}
+
+.board-player-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 600px;
+    padding: 6px 14px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+}
+
+.player-bar-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.player-bar-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+}
+
+/* Floating Game Ended Bar */
+.game-ended-bar {
+    position: absolute;
+    bottom: var(--spacing-lg);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
+    width: 90%;
+    max-width: 500px;
+    z-index: 20;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.board-centering-container {
+    position: relative;
+}
+
+.game-ended-text {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+}
+
+.game-ended-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+    .dashboard-layout {
+        display: flex;
+        flex-direction: column-reverse;
+        /* Controls at bottom on mobile? Or Top? stack vertically */
+        padding: var(--spacing-sm);
+        gap: var(--spacing-md);
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .dashboard-sidebar {
+        height: 600px;
+        /* Fixed height for interaction area on tablet */
+        flex-shrink: 0;
+    }
+
+    .dashboard-main {
+        flex: 0 0 auto;
+        padding: var(--spacing-md) 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .dashboard-layout {
+        display: block;
+        /* Normal flow */
+        padding: var(--spacing-xs);
+    }
+
+    /* On mobile, show Board FIRST, then Controls below */
+    .dashboard-main {
+        margin-bottom: var(--spacing-md);
+        min-height: auto;
+    }
+
+    .dashboard-sidebar {
+        height: auto;
+        min-height: 0;
+        border-radius: var(--radius-lg);
+    }
+
+    .sidebar-content {
+        height: 400px;
+        /* Limit chat/moves height on mobile */
+    }
+
+    .mobile-only {
+        display: flex;
+    }
+
+    .mobile-collapse-btn {
+        display: flex;
+    }
+
+    /* Collapsed sidebar on mobile */
+    .dashboard-sidebar.collapsed .sidebar-collapsible {
+        display: none;
+    }
+
+    .dashboard-sidebar.collapsed {
+        height: auto;
+        padding-bottom: var(--spacing-sm);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+    .room-header {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+        padding: var(--spacing-sm);
+        margin: var(--spacing-xs);
+    }
+
+    .room-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .room-info .btn {
+        padding: var(--spacing-xs);
+    }
+
+    .room-info .btn span {
+        display: none;
+    }
+
+    .room-code-display {
+        gap: var(--spacing-xs);
+    }
+
+    .room-label {
+        display: none;
+    }
+
+    .header-right {
+        flex-shrink: 0;
+    }
+
+    .connection-info {
+        display: none;
+    }
+
+    .status-text {
+        display: none;
+    }
+
+    .game-container {
+        padding: 0 var(--spacing-xs) var(--spacing-md);
+    }
+
+    .board-section {
+        padding: 0;
+        gap: var(--spacing-lg);
+    }
+
+    .player-bar {
+        padding: var(--spacing-sm) var(--spacing-md);
+        gap: var(--spacing-sm);
+        justify-content: center;
+    }
+
+    .sidebar-left,
+    .sidebar-right {
+        display: none;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+    .room-header {
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .game-container {
+        padding: 0 0 var(--spacing-md);
+    }
+
+    .board-section {
+        padding: var(--spacing-lg) 0;
+    }
+}
+
+/* Join Page */
+.join-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+}
+
+.join-container {
+    width: 100%;
+    max-width: 400px;
+}
+
+.join-modal {
+    width: 100%;
+}
+
+.join-info {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-md);
+}
+
+.join-info strong {
+    font-family: var(--font-mono);
+    color: var(--color-text-primary);
+    letter-spacing: 0.1em;
+}
+
+.error-text {
+    color: var(--color-error);
+    font-size: 0.875rem;
+    margin-top: var(--spacing-sm);
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.form-actions .btn {
+    flex: 1;
+}
+
+/* Share Modal (Refined) */
+.share-modal {
+    width: 100%;
+    max-width: 420px;
+}
+
+.share-info {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.5;
+}
+
+.share-code-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.3);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--spacing-md);
+}
+
+.share-code {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    /* Explicit white for maximum contrast */
+    letter-spacing: 0.1em;
+    padding-left: var(--spacing-xs);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    /* Add subtle glow */
+}
+
+/* Share Divider */
+.share-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-lg) 0;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.share-divider span {
+    opacity: 0.7;
+}
+
+.share-divider::before,
+.share-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+    opacity: 0.3;
+}
+
+.share-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+    /* Subtle separation */
+}
+
+.spinner {
+    animation: spin 2s linear infinite;
+    color: var(--color-accent);
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

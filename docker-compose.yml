@@ -1,0 +1,34 @@
+services:
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: indie-chess-frontend
+    restart: unless-stopped
+    ports:
+      - "3080:80"
+    networks:
+      - yunkhngn-website_app-network
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: indie-chess-backend
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - CORS_ORIGIN=https://chess.yunkhngn.dev
+    volumes:
+      - ./pgn-data:/app/pgn
+    networks:
+      - yunkhngn-website_app-network
+
+networks:
+  yunkhngn-website_app-network:
+    external: true

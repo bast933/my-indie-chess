@@ -1,0 +1,109 @@
+.math-challenge-overlay {
+    z-index: 1000;
+}
+
+.math-challenge-modal {
+    max-width: 360px;
+    text-align: center;
+}
+
+.modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Timer */
+.challenge-timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.8rem;
+    background: var(--bg-tertiary);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.challenge-timer.warning {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    animation: pulse-warning 1s infinite;
+}
+
+@keyframes pulse-warning {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Problem Display */
+.challenge-problem {
+    margin-bottom: 1.25rem;
+}
+
+.problem-text {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: 0.05em;
+}
+
+/* Status Messages */
+.challenge-status {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.challenge-status.success {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.challenge-status.fail {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.challenge-status.timeout {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+/* Form */
+.challenge-form {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.challenge-input {
+    flex: 1;
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* Hide number input spinners */
+.challenge-input::-webkit-outer-spin-button,
+.challenge-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.challenge-input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}

@@ -1,0 +1,22 @@
+{
+  "name": "indie-chess-server",
+  "version": "1.0.0",
+  "description": "Real-time multiplayer chess server with Socket.IO",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "chess.js": "^1.0.0-beta.8",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

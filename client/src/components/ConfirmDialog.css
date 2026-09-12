@@ -1,0 +1,30 @@
+.confirm-dialog {
+    text-align: center;
+    max-width: 360px;
+}
+
+.confirm-icon {
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+.confirm-title {
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.confirm-message {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.confirm-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: center;
+}
+
+.confirm-actions .btn {
+    flex: 1;
+    max-width: 120px;
+}

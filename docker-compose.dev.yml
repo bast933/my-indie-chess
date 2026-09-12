@@ -1,0 +1,39 @@
+services:
+  frontend:
+    image: node:20-alpine
+    container_name: indie-chess-frontend-dev
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - VITE_SOCKET_URL=http://localhost:3002
+    networks:
+      - chess-network-dev
+    depends_on:
+      - backend
+
+  backend:
+    image: node:20-alpine
+    container_name: indie-chess-backend-dev
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - ./pgn-data:/app/pgn
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - CORS_ORIGIN=http://localhost:5173
+    networks:
+      - chess-network-dev
+
+networks:
+  chess-network-dev:
+    driver: bridge
