@@ -11,8 +11,9 @@ const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
  * @param {string} playerColor  'white' | 'black'
  * @param {number} depth        Stockfish search depth (1-20)
  * @param {object|null} timeControl  { initial: ms, increment: ms } or null for unlimited
+ * @param {boolean} isBilateral  Enable bilateral clock feature
  */
-export function useComputerGame(playerColor = 'white', depth = 12, timeControl = null) {
+export function useComputerGame(playerColor = 'white', depth = 12, timeControl = null, isBilateral = false) {
     const chessRef = useRef(new Chess());
     const [fen, setFen] = useState(INITIAL_FEN);
     const [moves, setMoves] = useState([]);
@@ -22,6 +23,9 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
     const [result, setResult] = useState(null);
     const [isStarted, setIsStarted] = useState(true);
     const [pgn, setPgn] = useState('');
+
+    // Bilateral: player has a manual switch; computer switch = isThinking (auto)
+    const [playerSwitch, setPlayerSwitch] = useState(false);
 
     // Clocks
     const clocksRef = useRef({
@@ -39,6 +43,9 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
 
     const computerColor = playerColor === 'white' ? 'black' : 'white';
 
+    // Clock pauses when BOTH player switch AND computer switch (isThinking) are ON
+    const isBilateralPaused = isBilateral && playerSwitch && isThinking;
+
     // ── Clock management ──────────────────────────────────────────────
     const stopClock = useCallback(() => {
         if (clockIntervalRef.current) {
@@ -47,14 +54,26 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         }
     }, []);
 
+    // Ref so the setInterval callback always reads current pause state
+    const bilateralPausedRef = useRef(false);
+    useEffect(() => { bilateralPausedRef.current = isBilateralPaused; }, [isBilateralPaused]);
+
     const startClock = useCallback((currentTurn) => {
         if (!timeControl || timeControl.initial === 0) return;
         stopClock();
         clocksRef.current.lastSync = Date.now();
 
         clockIntervalRef.current = setInterval(() => {
+            // Bilateral pause: reset lastSync so elapsed doesn't accumulate
+            if (bilateralPausedRef.current) {
+                clocksRef.current.lastSync = Date.now();
+                return;
+            }
+
             const elapsed = Date.now() - clocksRef.current.lastSync;
+            clocksRef.current.lastSync = Date.now();
             const remaining = Math.max(0, clocksRef.current[currentTurn] - elapsed);
+            clocksRef.current[currentTurn] = remaining;
             setClocks(prev => ({ ...prev, [currentTurn]: remaining }));
 
             if (remaining <= 0) {
@@ -68,9 +87,6 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
 
     const tickClock = useCallback((currentTurn) => {
         if (!timeControl || timeControl.initial === 0) return;
-        const elapsed = Date.now() - clocksRef.current.lastSync;
-        clocksRef.current[currentTurn] = Math.max(0, clocksRef.current[currentTurn] - elapsed);
-        // Add increment to the player who just moved
         if (timeControl.increment) {
             clocksRef.current[currentTurn] += timeControl.increment;
         }
@@ -103,7 +119,7 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         const chess = chessRef.current;
         if (isEnded) return false;
         if ((turn === 'white' ? 'w' : 'b') !== chess.turn()) return false;
-        if (turn !== playerColor) return false; // Not player's turn
+        if (turn !== playerColor) return false;
 
         try {
             const moveResult = chess.move({ from, to, promotion: promotion || undefined });
@@ -111,6 +127,8 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
 
             const prevTurn = turn;
             tickClock(prevTurn);
+            // Reset player switch after each move
+            setPlayerSwitch(false);
 
             const newTurn = chess.turn() === 'w' ? 'white' : 'black';
             setFen(chess.fen());
@@ -129,10 +147,8 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
     }, [isEnded, turn, playerColor, tickClock, checkGameOver, startClock]);
 
     // ── Computer move ─────────────────────────────────────────────────
-    // Trigger Stockfish when it's the computer's turn
     useEffect(() => {
         if (!isEnded && isStarted && turn === computerColor && !isThinking) {
-            // Small delay so the UI shows the board first
             const t = setTimeout(() => {
                 findBestMove(chessRef.current.fen(), depth);
             }, 300);
@@ -140,7 +156,6 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         }
     }, [turn, isEnded, isStarted, computerColor, isThinking, findBestMove, depth]);
 
-    // Apply Stockfish's move when received
     useEffect(() => {
         if (!bestMove || isEnded || turn !== computerColor) return;
 
@@ -167,18 +182,18 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
                 startClock(newTurn);
             }
         } catch {
-            // Illegal move from engine — shouldn't happen, but guard it
+            // Illegal move from engine
         }
     }, [bestMove, isEnded, turn, computerColor, tickClock, checkGameOver, startClock]);
 
-    // Start clock when game begins
+    // Start clock on mount
     useEffect(() => {
         if (isStarted && !isEnded && timeControl?.initial > 0) {
             startClock(turn);
         }
         return () => stopClock();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // only on mount
+    }, []);
 
     // ── Player resign ─────────────────────────────────────────────────
     const resign = useCallback(() => {
@@ -187,6 +202,11 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         setIsEnded(true);
         setResult({ winner: computerColor, reason: 'resignation' });
     }, [isEnded, computerColor, stopClock]);
+
+    // ── Toggle player bilateral switch ────────────────────────────────
+    const togglePlayerSwitch = useCallback(() => {
+        setPlayerSwitch(prev => !prev);
+    }, []);
 
     // ── Reset / new game ──────────────────────────────────────────────
     const reset = useCallback(() => {
@@ -201,6 +221,7 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         setResult(null);
         setIsStarted(true);
         setPgn('');
+        setPlayerSwitch(false);
         const initial = timeControl?.initial ?? 0;
         clocksRef.current = { white: initial, black: initial, lastSync: Date.now() };
         setClocks({ white: initial, black: initial });
@@ -221,8 +242,13 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         playerColor,
         computerColor,
         isThinking,
+        isBilateral,
+        playerSwitch,
+        computerSwitch: isThinking, // auto: ON while engine calculates
+        isBilateralPaused,
         makeMove,
         resign,
-        reset
+        reset,
+        togglePlayerSwitch
     };
 }

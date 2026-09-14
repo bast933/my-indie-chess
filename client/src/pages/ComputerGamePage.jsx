@@ -8,7 +8,9 @@ import {
     Flag,
     Bot,
     User,
-    Crown
+    Crown,
+    PauseCircle,
+    PlayCircle
 } from 'lucide-react';
 import { useComputerGame } from '../hooks/useComputerGame';
 import ChessBoard from '../components/ChessBoard';
@@ -19,7 +21,7 @@ import './ComputerGamePage.css';
 
 // Time control options (ms)
 const TIME_OPTIONS = [
-    { label: 'Unlimited', initial: 0, increment: 0 },
+    { label: 'Unlimited',   initial: 0,           increment: 0 },
     { label: 'Bullet  1+0', initial: 1 * 60 * 1000, increment: 0 },
     { label: 'Bullet  2+1', initial: 2 * 60 * 1000, increment: 1000 },
     { label: 'Blitz   3+0', initial: 3 * 60 * 1000, increment: 0 },
@@ -41,6 +43,9 @@ function SetupScreen({ onStart }) {
     const [color, setColor] = useState('white');
     const [diffIdx, setDiffIdx] = useState(2);
     const [timeIdx, setTimeIdx] = useState(0);
+    const [bilateral, setBilateral] = useState(false);
+
+    const isTimed = TIME_OPTIONS[timeIdx].initial > 0;
 
     return (
         <div className="cpu-setup-overlay">
@@ -97,13 +102,35 @@ function SetupScreen({ onStart }) {
                         <select
                             className="input select-input"
                             value={timeIdx}
-                            onChange={e => setTimeIdx(Number(e.target.value))}
+                            onChange={e => {
+                                setTimeIdx(Number(e.target.value));
+                                if (TIME_OPTIONS[Number(e.target.value)].initial === 0) setBilateral(false);
+                            }}
                         >
                             {TIME_OPTIONS.map((t, i) => (
                                 <option key={i} value={i}>{t.label}</option>
                             ))}
                         </select>
                     </div>
+
+                    {/* Bilateral Clock (only for timed games) */}
+                    {isTimed && (
+                        <div className="setup-group setup-group-row">
+                            <label className="setup-label" htmlFor="bilateral-check">
+                                Bilateral clock
+                                <span className="setup-sub">
+                                    Clock stops only when both players press ON
+                                </span>
+                            </label>
+                            <input
+                                id="bilateral-check"
+                                type="checkbox"
+                                className="setup-checkbox"
+                                checked={bilateral}
+                                onChange={e => setBilateral(e.target.checked)}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <button
@@ -111,7 +138,8 @@ function SetupScreen({ onStart }) {
                     onClick={() => onStart({
                         color,
                         depth: DIFFICULTY_LEVELS[diffIdx].depth,
-                        timeControl: TIME_OPTIONS[timeIdx]
+                        timeControl: TIME_OPTIONS[timeIdx],
+                        bilateral
                     })}
                 >
                     Start Game
@@ -125,13 +153,16 @@ function SetupScreen({ onStart }) {
 export default function ComputerGamePage() {
     const navigate = useNavigate();
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-    const [config, setConfig] = useState(null); // null = show setup
+    const [config, setConfig] = useState(null);
     const [showGameOver, setShowGameOver] = useState(true);
+
+    const timed = config?.timeControl?.initial > 0 ? config.timeControl : null;
 
     const game = useComputerGame(
         config?.color ?? 'white',
         config?.depth ?? 12,
-        config?.timeControl?.initial > 0 ? config.timeControl : null
+        timed,
+        config?.bilateral ?? false
     );
 
     const toggleTheme = () => {
@@ -152,6 +183,7 @@ export default function ComputerGamePage() {
     };
 
     const computerColor = config?.color === 'white' ? 'black' : 'white';
+    const diffLabel = DIFFICULTY_LEVELS.find(d => d.depth === config?.depth)?.label ?? '';
 
     return (
         <div className="cpu-page">
@@ -170,33 +202,37 @@ export default function ComputerGamePage() {
                 </button>
             </header>
 
-            {/* Setup screen overlay */}
+            {/* Setup overlay */}
             {!config && <SetupScreen onStart={handleStart} />}
 
             {config && (
                 <div className="cpu-layout">
-                    {/* Left Sidebar */}
+                    {/* ── Sidebar ── */}
                     <aside className="cpu-sidebar glass">
-                        {/* Computer profile */}
+                        {/* Profiles */}
                         <div className="cpu-profile-section">
+                            {/* Computer row */}
                             <div className="cpu-profile-row">
                                 <div className="cpu-profile-info">
                                     <span className="cpu-role">Computer</span>
                                     <div className="nametag-pill">
                                         <Bot size={13} />
                                         <span className="name">Stockfish</span>
-                                        <span className="cpu-difficulty-badge">
-                                            {DIFFICULTY_LEVELS.find(d => d.depth === config.depth)?.label}
-                                        </span>
+                                        <span className="cpu-difficulty-badge">{diffLabel}</span>
                                     </div>
                                 </div>
                                 <div className="profile-right">
+                                    {game.isBilateral && (
+                                        <span className={`bilateral-pill ${game.computerSwitch ? 'btn-active-on' : 'btn-active-off'}`}>
+                                            {game.computerSwitch ? '🟢 ON' : '⚫ OFF'}
+                                        </span>
+                                    )}
                                     <ChessClock
                                         time={game.clocks[computerColor]}
                                         isActive={game.turn === computerColor && !game.isEnded}
-                                        isPaused={game.isThinking}
+                                        isPaused={game.isBilateralPaused}
                                         isEnded={game.isEnded}
-                                        timeControl={config.timeControl?.initial > 0 ? config.timeControl : null}
+                                        timeControl={timed}
                                     />
                                     <span className={`color-indicator ${computerColor}`} />
                                 </div>
@@ -204,6 +240,7 @@ export default function ComputerGamePage() {
 
                             <div className="profile-divider"></div>
 
+                            {/* Player row */}
                             <div className="cpu-profile-row">
                                 <div className="cpu-profile-info">
                                     <span className="cpu-role">You</span>
@@ -213,16 +250,35 @@ export default function ComputerGamePage() {
                                     </div>
                                 </div>
                                 <div className="profile-right">
+                                    {game.isBilateral && (
+                                        <button
+                                            className={`bilateral-btn ${game.playerSwitch ? 'btn-active-on' : 'btn-active-off'}`}
+                                            onClick={game.togglePlayerSwitch}
+                                            disabled={game.isEnded}
+                                            title="Toggle your bilateral clock switch"
+                                        >
+                                            {game.playerSwitch ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
+                                            {game.playerSwitch ? 'ON' : 'OFF'}
+                                        </button>
+                                    )}
                                     <ChessClock
                                         time={game.clocks[config.color]}
                                         isActive={game.turn === config.color && !game.isEnded}
+                                        isPaused={game.isBilateralPaused}
                                         isEnded={game.isEnded}
-                                        timeControl={config.timeControl?.initial > 0 ? config.timeControl : null}
+                                        timeControl={timed}
                                     />
                                     <span className={`color-indicator ${config.color}`} />
                                 </div>
                             </div>
                         </div>
+
+                        {/* Bilateral pause status */}
+                        {game.isBilateral && game.isBilateralPaused && (
+                            <div className="bilateral-paused-banner">
+                                ⏸ Bilateral pause active — both ON
+                            </div>
+                        )}
 
                         {/* Move list */}
                         <div className="cpu-moves-wrapper">
@@ -246,7 +302,7 @@ export default function ComputerGamePage() {
                         </div>
                     </aside>
 
-                    {/* Board Area */}
+                    {/* ── Board ── */}
                     <main className="cpu-main">
                         <div className="board-centering-container">
                             {/* Top bar: Computer */}
@@ -254,19 +310,24 @@ export default function ComputerGamePage() {
                                 <div className="player-bar-info">
                                     <Bot size={14} />
                                     <span className="player-bar-name">
-                                        Stockfish ({DIFFICULTY_LEVELS.find(d => d.depth === config.depth)?.label})
+                                        Stockfish ({diffLabel})
                                     </span>
                                     <span className={`color-indicator ${computerColor}`} />
                                     {game.isThinking && (
                                         <span className="thinking-badge">Thinking...</span>
                                     )}
+                                    {game.isBilateral && (
+                                        <span className={`bilateral-pill ${game.computerSwitch ? 'btn-active-on' : 'btn-active-off'}`}>
+                                            {game.computerSwitch ? '🟢 ON' : '⚫ OFF'}
+                                        </span>
+                                    )}
                                 </div>
                                 <ChessClock
                                     time={game.clocks[computerColor]}
                                     isActive={game.turn === computerColor && !game.isEnded}
-                                    isPaused={game.isThinking}
+                                    isPaused={game.isBilateralPaused}
                                     isEnded={game.isEnded}
-                                    timeControl={config.timeControl?.initial > 0 ? config.timeControl : null}
+                                    timeControl={timed}
                                 />
                             </div>
 
@@ -290,12 +351,23 @@ export default function ComputerGamePage() {
                                         You ({config.color})
                                     </span>
                                     <span className={`color-indicator ${config.color}`} />
+                                    {game.isBilateral && (
+                                        <button
+                                            className={`bilateral-btn ${game.playerSwitch ? 'btn-active-on' : 'btn-active-off'}`}
+                                            onClick={game.togglePlayerSwitch}
+                                            disabled={game.isEnded}
+                                        >
+                                            {game.playerSwitch ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
+                                            Switch: {game.playerSwitch ? 'ON' : 'OFF'}
+                                        </button>
+                                    )}
                                 </div>
                                 <ChessClock
                                     time={game.clocks[config.color]}
                                     isActive={game.turn === config.color && !game.isEnded}
+                                    isPaused={game.isBilateralPaused}
                                     isEnded={game.isEnded}
-                                    timeControl={config.timeControl?.initial > 0 ? config.timeControl : null}
+                                    timeControl={timed}
                                 />
                             </div>
                         </div>
