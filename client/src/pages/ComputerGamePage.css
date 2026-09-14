@@ -1,0 +1,304 @@
+/* ── ComputerGamePage Layout ── */
+.cpu-page {
+    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-primary);
+    overflow: hidden;
+}
+
+/* Top Bar */
+.cpu-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+}
+
+.cpu-topbar-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.95rem;
+}
+
+/* Body layout: sidebar + board */
+.cpu-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+/* ── Sidebar ── */
+.cpu-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    padding: var(--spacing-md);
+    overflow: hidden;
+}
+
+.cpu-profile-section {
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.cpu-profile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.cpu-profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cpu-role {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.cpu-difficulty-badge {
+    font-size: 0.65rem;
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 4px;
+}
+
+.cpu-moves-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.cpu-moves-wrapper .move-list {
+    flex: 1;
+    min-height: 0;
+}
+
+.cpu-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+.cpu-actions .btn {
+    flex: 1;
+    justify-content: center;
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+/* ── Main Board Area ── */
+.cpu-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+}
+
+/* "Thinking..." indicator */
+.thinking-badge {
+    font-size: 0.7rem;
+    color: #a78bfa;
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 5px;
+    padding: 1px 7px;
+    margin-left: 6px;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ── Setup Screen ── */
+.cpu-setup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.cpu-setup-card {
+    width: 100%;
+    max-width: 440px;
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-xl);
+    border: 1px solid var(--glass-border);
+    background: var(--color-bg-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.cpu-setup-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.cpu-setup-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.cpu-setup-header p {
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.cpu-setup-icon {
+    color: var(--color-accent);
+}
+
+.cpu-setup-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.setup-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.setup-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+}
+
+.setup-highlight {
+    color: var(--color-accent);
+    text-transform: none;
+    font-weight: 700;
+}
+
+/* Color picker */
+.color-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+}
+
+.color-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+}
+
+.color-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-text-primary);
+}
+
+.color-btn.active {
+    background: var(--color-accent);
+    color: #fff;
+    border-color: var(--color-accent);
+}
+
+/* Difficulty slider */
+.difficulty-slider {
+    width: 100%;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.slider-labels span.active {
+    color: var(--color-accent);
+    font-weight: 700;
+}
+
+.btn-lg {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: 1rem;
+    border-radius: var(--radius-lg);
+    justify-content: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .cpu-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        padding: var(--spacing-sm);
+        gap: var(--spacing-sm);
+    }
+
+    .cpu-sidebar {
+        order: 2;
+        max-height: 220px;
+    }
+
+    .cpu-main {
+        order: 1;
+    }
+}

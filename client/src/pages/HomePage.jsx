@@ -13,7 +13,8 @@ import {
     Users,
     RefreshCw,
     LockOpen,
-    Clock
+    Clock,
+    Bot
 } from 'lucide-react';
 import { useChessSocket } from '../hooks/useChessSocket';
 import CreateRoomModal from '../components/CreateRoomModal';
@@ -147,6 +148,15 @@ export default function HomePage() {
                         <LogIn className="card-icon" size={32} />
                         <h3>Join Room</h3>
                         <p>Enter a room code to join a game</p>
+                    </button>
+
+                    <button
+                        className="action-card glass action-card-cpu"
+                        onClick={() => navigate('/computer')}
+                    >
+                        <Bot className="card-icon" size={32} />
+                        <h3>vs Computer</h3>
+                        <p>Play offline against Stockfish</p>
                     </button>
                 </div>
 

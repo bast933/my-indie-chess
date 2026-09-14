@@ -282,3 +282,23 @@
         max-width: 100%;
     }
 }
+
+/* 3-column layout for action cards when all 3 are present */
+.action-cards {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* vs Computer card – purple accent */
+.action-card-cpu .card-icon {
+    color: #a78bfa;
+}
+
+.action-card-cpu:hover:not(:disabled) .card-icon {
+    color: #c4b5fd;
+}
+
+.action-card-cpu:hover:not(:disabled) {
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 12px 40px rgba(139, 92, 246, 0.15);
+}
