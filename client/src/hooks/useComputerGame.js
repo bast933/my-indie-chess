@@ -11,9 +11,8 @@ const INITIAL_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
  * @param {string} playerColor  'white' | 'black'
  * @param {number} depth        Stockfish search depth (1-20)
  * @param {object|null} timeControl  { initial: ms, increment: ms } or null for unlimited
- * @param {boolean} isBilateral  Enable bilateral clock feature
  */
-export function useComputerGame(playerColor = 'white', depth = 12, timeControl = null, isBilateral = false) {
+export function useComputerGame(playerColor = 'white', depth = 12, timeControl = null) {
     const chessRef = useRef(new Chess());
     const [fen, setFen] = useState(INITIAL_FEN);
     const [moves, setMoves] = useState([]);
@@ -23,9 +22,6 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
     const [result, setResult] = useState(null);
     const [isStarted, setIsStarted] = useState(true);
     const [pgn, setPgn] = useState('');
-
-    // Bilateral: player has a manual switch; computer switch = isThinking (auto)
-    const [playerSwitch, setPlayerSwitch] = useState(false);
 
     // Clocks
     const clocksRef = useRef({
@@ -43,9 +39,6 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
 
     const computerColor = playerColor === 'white' ? 'black' : 'white';
 
-    // Clock pauses when BOTH player switch AND computer switch (isThinking) are ON
-    const isBilateralPaused = isBilateral && playerSwitch && isThinking;
-
     // ── Clock management ──────────────────────────────────────────────
     const stopClock = useCallback(() => {
         if (clockIntervalRef.current) {
@@ -54,22 +47,12 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         }
     }, []);
 
-    // Ref so the setInterval callback always reads current pause state
-    const bilateralPausedRef = useRef(false);
-    useEffect(() => { bilateralPausedRef.current = isBilateralPaused; }, [isBilateralPaused]);
-
     const startClock = useCallback((currentTurn) => {
         if (!timeControl || timeControl.initial === 0) return;
         stopClock();
         clocksRef.current.lastSync = Date.now();
 
         clockIntervalRef.current = setInterval(() => {
-            // Bilateral pause: reset lastSync so elapsed doesn't accumulate
-            if (bilateralPausedRef.current) {
-                clocksRef.current.lastSync = Date.now();
-                return;
-            }
-
             const elapsed = Date.now() - clocksRef.current.lastSync;
             clocksRef.current.lastSync = Date.now();
             const remaining = Math.max(0, clocksRef.current[currentTurn] - elapsed);
@@ -127,8 +110,6 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
 
             const prevTurn = turn;
             tickClock(prevTurn);
-            // Reset player switch after each move
-            setPlayerSwitch(false);
 
             const newTurn = chess.turn() === 'w' ? 'white' : 'black';
             setFen(chess.fen());
@@ -203,11 +184,6 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         setResult({ winner: computerColor, reason: 'resignation' });
     }, [isEnded, computerColor, stopClock]);
 
-    // ── Toggle player bilateral switch ────────────────────────────────
-    const togglePlayerSwitch = useCallback(() => {
-        setPlayerSwitch(prev => !prev);
-    }, []);
-
     // ── Reset / new game ──────────────────────────────────────────────
     const reset = useCallback(() => {
         stopClock();
@@ -221,7 +197,6 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         setResult(null);
         setIsStarted(true);
         setPgn('');
-        setPlayerSwitch(false);
         const initial = timeControl?.initial ?? 0;
         clocksRef.current = { white: initial, black: initial, lastSync: Date.now() };
         setClocks({ white: initial, black: initial });
@@ -242,13 +217,8 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         playerColor,
         computerColor,
         isThinking,
-        isBilateral,
-        playerSwitch,
-        computerSwitch: isThinking, // auto: ON while engine calculates
-        isBilateralPaused,
         makeMove,
         resign,
-        reset,
-        togglePlayerSwitch
+        reset
     };
 }
