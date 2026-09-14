@@ -8,7 +8,8 @@ import {
     Flag,
     Bot,
     User,
-    Crown
+    Crown,
+    Settings
 } from 'lucide-react';
 import { useComputerGame } from '../hooks/useComputerGame';
 import ChessBoard from '../components/ChessBoard';
@@ -37,10 +38,18 @@ const DIFFICULTY_LEVELS = [
 ];
 
 // ─── Setup Screen ────────────────────────────────────────────────────────────
-function SetupScreen({ onStart }) {
-    const [color, setColor] = useState('white');
-    const [diffIdx, setDiffIdx] = useState(2);
-    const [timeIdx, setTimeIdx] = useState(0);
+function SetupScreen({ onStart, initialConfig }) {
+    const [color, setColor] = useState(initialConfig?.color || 'white');
+    const [diffIdx, setDiffIdx] = useState(() => {
+        if (!initialConfig) return 2; // Intermediate
+        const idx = DIFFICULTY_LEVELS.findIndex(d => d.depth === initialConfig.depth);
+        return idx >= 0 ? idx : 2;
+    });
+    const [timeIdx, setTimeIdx] = useState(() => {
+        if (!initialConfig?.timeControl) return 0;
+        const idx = TIME_OPTIONS.findIndex(t => t.initial === initialConfig.timeControl.initial && t.increment === initialConfig.timeControl.increment);
+        return idx >= 0 ? idx : 0;
+    });
 
     return (
         <div className="cpu-setup-overlay">
@@ -121,20 +130,183 @@ function SetupScreen({ onStart }) {
     );
 }
 
+// ─── Active Game Arena View ──────────────────────────────────────────────────
+function ComputerGameArena({ config, onBackToSetup }) {
+    const navigate = useNavigate();
+    const [showGameOver, setShowGameOver] = useState(true);
+
+    const timed = config.timeControl?.initial > 0 ? config.timeControl : null;
+
+    const game = useComputerGame(
+        config.color,
+        config.depth,
+        timed
+    );
+
+    const handleReset = () => {
+        game.reset();
+        setShowGameOver(true);
+    };
+
+    const computerColor = config.color === 'white' ? 'black' : 'white';
+    const diffLabel = DIFFICULTY_LEVELS.find(d => d.depth === config.depth)?.label ?? '';
+
+    return (
+        <div className="cpu-layout">
+            {/* Left Sidebar */}
+            <aside className="cpu-sidebar glass">
+                {/* Profiles */}
+                <div className="cpu-profile-section">
+                    {/* Computer profile */}
+                    <div className="cpu-profile-row">
+                        <div className="cpu-profile-info">
+                            <span className="cpu-role">Computer</span>
+                            <div className="nametag-pill">
+                                <Bot size={13} />
+                                <span className="name">Stockfish</span>
+                                <span className="cpu-difficulty-badge">{diffLabel}</span>
+                            </div>
+                        </div>
+                        <div className="profile-right">
+                            <ChessClock
+                                time={game.clocks[computerColor]}
+                                isActive={game.turn === computerColor && !game.isEnded}
+                                isPaused={game.isThinking}
+                                isEnded={game.isEnded}
+                                timeControl={timed}
+                            />
+                            <span className={`color-indicator ${computerColor}`} />
+                        </div>
+                    </div>
+
+                    <div className="profile-divider"></div>
+
+                    {/* Player profile */}
+                    <div className="cpu-profile-row">
+                        <div className="cpu-profile-info">
+                            <span className="cpu-role">You</span>
+                            <div className="nametag-pill">
+                                <User size={13} />
+                                <span className="name">Player</span>
+                            </div>
+                        </div>
+                        <div className="profile-right">
+                            <ChessClock
+                                time={game.clocks[config.color]}
+                                isActive={game.turn === config.color && !game.isEnded}
+                                isEnded={game.isEnded}
+                                timeControl={timed}
+                            />
+                            <span className={`color-indicator ${config.color}`} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Move list */}
+                <div className="cpu-moves-wrapper">
+                    <MoveList moves={game.moves} />
+                </div>
+
+                {/* Actions */}
+                <div className="cpu-actions">
+                    <button className="btn btn-secondary" onClick={handleReset} title="Restart current game">
+                        <RotateCcw size={15} />
+                        New Game
+                    </button>
+                    <button className="btn btn-ghost" onClick={onBackToSetup} title="Change settings">
+                        <Settings size={15} />
+                        Settings
+                    </button>
+                    <button
+                        className="btn btn-danger"
+                        onClick={game.resign}
+                        disabled={game.isEnded}
+                        title="Resign game"
+                    >
+                        <Flag size={15} />
+                        Resign
+                    </button>
+                </div>
+            </aside>
+
+            {/* Board Area */}
+            <main className="cpu-main">
+                <div className="board-centering-container">
+                    {/* Top bar: Computer */}
+                    <div className="board-player-bar top">
+                        <div className="player-bar-info">
+                            <Bot size={14} />
+                            <span className="player-bar-name">
+                                Stockfish ({diffLabel})
+                            </span>
+                            <span className={`color-indicator ${computerColor}`} />
+                            {game.isThinking && (
+                                <span className="thinking-badge">Thinking...</span>
+                            )}
+                        </div>
+                        <ChessClock
+                            time={game.clocks[computerColor]}
+                            isActive={game.turn === computerColor && !game.isEnded}
+                            isPaused={game.isThinking}
+                            isEnded={game.isEnded}
+                            timeControl={timed}
+                        />
+                    </div>
+
+                    <ChessBoard
+                        fen={game.fen}
+                        playerColor={config.color}
+                        onMove={game.makeMove}
+                        isMyTurn={game.turn === config.color && !game.isThinking}
+                        isGameStarted={game.isStarted}
+                        isGameEnded={game.isEnded}
+                        lastMove={game.moves[game.moves.length - 1]}
+                        isCheck={game.isCheck}
+                        opponentConnected={true}
+                    />
+
+                    {/* Bottom bar: Player */}
+                    <div className="board-player-bar bottom">
+                        <div className="player-bar-info">
+                            <User size={14} />
+                            <span className="player-bar-name">
+                                You ({config.color})
+                            </span>
+                            <span className={`color-indicator ${config.color}`} />
+                        </div>
+                        <ChessClock
+                            time={game.clocks[config.color]}
+                            isActive={game.turn === config.color && !game.isEnded}
+                            isEnded={game.isEnded}
+                            timeControl={timed}
+                        />
+                    </div>
+                </div>
+            </main>
+
+            {/* Game over modal */}
+            {game.isEnded && showGameOver && (
+                <GameOverModal
+                    result={game.result}
+                    playerColor={config.color}
+                    pgn={game.pgn}
+                    onRematch={handleReset}
+                    onLeave={() => navigate('/')}
+                    onClose={() => setShowGameOver(false)}
+                    pendingRematch={false}
+                    rematchRequested={false}
+                />
+            )}
+        </div>
+    );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function ComputerGamePage() {
     const navigate = useNavigate();
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
     const [config, setConfig] = useState(null); // null = show setup
-    const [showGameOver, setShowGameOver] = useState(true);
-
-    const timed = config?.timeControl?.initial > 0 ? config.timeControl : null;
-
-    const game = useComputerGame(
-        config?.color ?? 'white',
-        config?.depth ?? 12,
-        timed
-    );
+    const [gameKey, setGameKey] = useState(0);
 
     const toggleTheme = () => {
         const next = theme === 'dark' ? 'light' : 'dark';
@@ -145,16 +317,8 @@ export default function ComputerGamePage() {
 
     const handleStart = (cfg) => {
         setConfig(cfg);
-        setShowGameOver(true);
+        setGameKey(k => k + 1);
     };
-
-    const handleReset = () => {
-        game.reset();
-        setShowGameOver(true);
-    };
-
-    const computerColor = config?.color === 'white' ? 'black' : 'white';
-    const diffLabel = DIFFICULTY_LEVELS.find(d => d.depth === config?.depth)?.label ?? '';
 
     return (
         <div className="cpu-page">
@@ -174,149 +338,13 @@ export default function ComputerGamePage() {
             </header>
 
             {/* Setup screen overlay */}
-            {!config && <SetupScreen onStart={handleStart} />}
-
-            {config && (
-                <div className="cpu-layout">
-                    {/* Left Sidebar */}
-                    <aside className="cpu-sidebar glass">
-                        {/* Profiles */}
-                        <div className="cpu-profile-section">
-                            {/* Computer profile */}
-                            <div className="cpu-profile-row">
-                                <div className="cpu-profile-info">
-                                    <span className="cpu-role">Computer</span>
-                                    <div className="nametag-pill">
-                                        <Bot size={13} />
-                                        <span className="name">Stockfish</span>
-                                        <span className="cpu-difficulty-badge">{diffLabel}</span>
-                                    </div>
-                                </div>
-                                <div className="profile-right">
-                                    <ChessClock
-                                        time={game.clocks[computerColor]}
-                                        isActive={game.turn === computerColor && !game.isEnded}
-                                        isPaused={game.isThinking}
-                                        isEnded={game.isEnded}
-                                        timeControl={timed}
-                                    />
-                                    <span className={`color-indicator ${computerColor}`} />
-                                </div>
-                            </div>
-
-                            <div className="profile-divider"></div>
-
-                            {/* Player profile */}
-                            <div className="cpu-profile-row">
-                                <div className="cpu-profile-info">
-                                    <span className="cpu-role">You</span>
-                                    <div className="nametag-pill">
-                                        <User size={13} />
-                                        <span className="name">Player</span>
-                                    </div>
-                                </div>
-                                <div className="profile-right">
-                                    <ChessClock
-                                        time={game.clocks[config.color]}
-                                        isActive={game.turn === config.color && !game.isEnded}
-                                        isEnded={game.isEnded}
-                                        timeControl={timed}
-                                    />
-                                    <span className={`color-indicator ${config.color}`} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Move list */}
-                        <div className="cpu-moves-wrapper">
-                            <MoveList moves={game.moves} />
-                        </div>
-
-                        {/* Actions */}
-                        <div className="cpu-actions">
-                            <button className="btn btn-secondary" onClick={handleReset}>
-                                <RotateCcw size={15} />
-                                New Game
-                            </button>
-                            <button
-                                className="btn btn-danger"
-                                onClick={game.resign}
-                                disabled={game.isEnded}
-                            >
-                                <Flag size={15} />
-                                Resign
-                            </button>
-                        </div>
-                    </aside>
-
-                    {/* Board Area */}
-                    <main className="cpu-main">
-                        <div className="board-centering-container">
-                            {/* Top bar: Computer */}
-                            <div className="board-player-bar top">
-                                <div className="player-bar-info">
-                                    <Bot size={14} />
-                                    <span className="player-bar-name">
-                                        Stockfish ({diffLabel})
-                                    </span>
-                                    <span className={`color-indicator ${computerColor}`} />
-                                    {game.isThinking && (
-                                        <span className="thinking-badge">Thinking...</span>
-                                    )}
-                                </div>
-                                <ChessClock
-                                    time={game.clocks[computerColor]}
-                                    isActive={game.turn === computerColor && !game.isEnded}
-                                    isPaused={game.isThinking}
-                                    isEnded={game.isEnded}
-                                    timeControl={timed}
-                                />
-                            </div>
-
-                            <ChessBoard
-                                fen={game.fen}
-                                playerColor={config.color}
-                                onMove={game.makeMove}
-                                isMyTurn={game.turn === config.color && !game.isThinking}
-                                isGameStarted={game.isStarted}
-                                isGameEnded={game.isEnded}
-                                lastMove={game.moves[game.moves.length - 1]}
-                                isCheck={game.isCheck}
-                                opponentConnected={true}
-                            />
-
-                            {/* Bottom bar: Player */}
-                            <div className="board-player-bar bottom">
-                                <div className="player-bar-info">
-                                    <User size={14} />
-                                    <span className="player-bar-name">
-                                        You ({config.color})
-                                    </span>
-                                    <span className={`color-indicator ${config.color}`} />
-                                </div>
-                                <ChessClock
-                                    time={game.clocks[config.color]}
-                                    isActive={game.turn === config.color && !game.isEnded}
-                                    isEnded={game.isEnded}
-                                    timeControl={timed}
-                                />
-                            </div>
-                        </div>
-                    </main>
-                </div>
-            )}
-
-            {/* Game over modal */}
-            {game.isEnded && showGameOver && (
-                <GameOverModal
-                    result={game.result}
-                    playerColor={config?.color ?? 'white'}
-                    pgn={game.pgn}
-                    onRematch={handleReset}
-                    onLeave={() => navigate('/')}
-                    onClose={() => setShowGameOver(false)}
-                    pendingRematch={false}
-                    rematchRequested={false}
+            {!config ? (
+                <SetupScreen onStart={handleStart} initialConfig={config} />
+            ) : (
+                <ComputerGameArena
+                    key={gameKey}
+                    config={config}
+                    onBackToSetup={() => setConfig(null)}
                 />
             )}
         </div>

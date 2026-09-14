@@ -23,15 +23,17 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
     const [isStarted, setIsStarted] = useState(true);
     const [pgn, setPgn] = useState('');
 
+    const initialTime = timeControl?.initial ?? 0;
+
     // Clocks
     const clocksRef = useRef({
-        white: timeControl?.initial ?? 0,
-        black: timeControl?.initial ?? 0,
+        white: initialTime,
+        black: initialTime,
         lastSync: Date.now()
     });
     const [clocks, setClocks] = useState({
-        white: timeControl?.initial ?? 0,
-        black: timeControl?.initial ?? 0
+        white: initialTime,
+        black: initialTime
     });
     const clockIntervalRef = useRef(null);
 
@@ -53,8 +55,9 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
         clocksRef.current.lastSync = Date.now();
 
         clockIntervalRef.current = setInterval(() => {
-            const elapsed = Date.now() - clocksRef.current.lastSync;
-            clocksRef.current.lastSync = Date.now();
+            const now = Date.now();
+            const elapsed = now - clocksRef.current.lastSync;
+            clocksRef.current.lastSync = now;
             const remaining = Math.max(0, clocksRef.current[currentTurn] - elapsed);
             clocksRef.current[currentTurn] = remaining;
             setClocks(prev => ({ ...prev, [currentTurn]: remaining }));
@@ -70,11 +73,38 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
 
     const tickClock = useCallback((currentTurn) => {
         if (!timeControl || timeControl.initial === 0) return;
+        const now = Date.now();
+        const elapsed = now - clocksRef.current.lastSync;
+        clocksRef.current.lastSync = now;
+        clocksRef.current[currentTurn] = Math.max(0, clocksRef.current[currentTurn] - elapsed);
         if (timeControl.increment) {
             clocksRef.current[currentTurn] += timeControl.increment;
         }
         setClocks({ white: clocksRef.current.white, black: clocksRef.current.black });
     }, [timeControl]);
+
+    // Keep clocks in sync whenever timeControl changes
+    useEffect(() => {
+        const init = timeControl?.initial ?? 0;
+        clocksRef.current = {
+            white: init,
+            black: init,
+            lastSync: Date.now()
+        };
+        setClocks({
+            white: init,
+            black: init
+        });
+
+        if (init > 0 && isStarted && !isEnded) {
+            startClock(turn);
+        } else {
+            stopClock();
+        }
+
+        return () => stopClock();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [timeControl?.initial, timeControl?.increment]);
 
     // ── Derive game over conditions ───────────────────────────────────
     const checkGameOver = useCallback((chess) => {
@@ -166,15 +196,6 @@ export function useComputerGame(playerColor = 'white', depth = 12, timeControl =
             // Illegal move from engine
         }
     }, [bestMove, isEnded, turn, computerColor, tickClock, checkGameOver, startClock]);
-
-    // Start clock on mount
-    useEffect(() => {
-        if (isStarted && !isEnded && timeControl?.initial > 0) {
-            startClock(turn);
-        }
-        return () => stopClock();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     // ── Player resign ─────────────────────────────────────────────────
     const resign = useCallback(() => {
