@@ -273,7 +273,7 @@ export default function RoomPage() {
 
     const handleCopyLink = async () => {
         try {
-            const link = `${window.location.origin}/room/${roomCode}`;
+            const link = window.location.href;
             await navigator.clipboard.writeText(link);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);

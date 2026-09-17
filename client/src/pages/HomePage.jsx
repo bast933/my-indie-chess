@@ -116,9 +116,13 @@ export default function HomePage() {
                 <header className="home-header">
                     <div className="logo">
                         <Crown className="logo-icon" size={40} strokeWidth={1.5} />
-                        <h1>Indie Chess</h1>
+                        <h1>Fair Time</h1>
                     </div>
-                    <p className="tagline">Real-time multiplayer chess. Play with friends anywhere.</p>
+                    <p className="tagline">
+                        Chess featuring the innovative Bilateral Clock: mutual tactical pauses when both players agree.
+                        <br />
+                        Play online with friends or challenge Stockfish offline.
+                    </p>
 
                     <div className="connection-status">
                         <span className={`status-dot ${connected ? 'connected' : 'disconnected'}`} />
