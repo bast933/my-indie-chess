@@ -6,7 +6,6 @@ import {
     Zap,
     MessageSquare,
     Lock,
-    Heart,
     Sun,
     Moon,
     Crown,
@@ -233,15 +232,6 @@ export default function HomePage() {
                     </div>
                 </div>
             </main>
-
-            <footer className="home-footer">
-                <p>
-                    Built with <Heart size={14} className="heart-icon" /> Summer by{' '}
-                    <a href="https://github.com/yunkhngn" target="_blank" rel="noopener noreferrer">
-                        yunkhngn
-                    </a>
-                </p>
-            </footer>
 
             {showCreateModal && (
                 <CreateRoomModal
