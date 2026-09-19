@@ -3,6 +3,8 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { Loader2, Pause } from 'lucide-react';
 import { useChessSound } from '../hooks/useChessSound';
+import { numericPieces } from './NumericPieces';
+import { usePieceTheme } from '../hooks/usePieceTheme';
 import './ChessBoard.css';
 
 export default function ChessBoard({
@@ -15,8 +17,13 @@ export default function ChessBoard({
     lastMove,
     isCheck,
     opponentConnected = true,
-    suggestedMove // 'e2e4'
+    suggestedMove, // 'e2e4'
+    pieceTheme: propPieceTheme
 }) {
+    const { pieceTheme: storedPieceTheme } = usePieceTheme();
+    const effectivePieceTheme = propPieceTheme || storedPieceTheme;
+    const isNumeric = effectivePieceTheme === 'numeric';
+
     const [moveFrom, setMoveFrom] = useState(null);
     const [optionSquares, setOptionSquares] = useState({});
     const [rightClickedSquares, setRightClickedSquares] = useState({});
@@ -217,8 +224,9 @@ export default function ChessBoard({
                     borderRadius: '12px',
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
                 }}
-                customDarkSquareStyle={{ backgroundColor: 'var(--color-black-square)' }}
-                customLightSquareStyle={{ backgroundColor: 'var(--color-white-square)' }}
+                customDarkSquareStyle={{ backgroundColor: isNumeric ? '#138340' : 'var(--color-black-square)' }}
+                customLightSquareStyle={{ backgroundColor: isNumeric ? '#1fa652' : 'var(--color-white-square)' }}
+                customPieces={isNumeric ? numericPieces : undefined}
                 animationDuration={200}
                 arePiecesDraggable={isMyTurn && !isGameEnded && opponentConnected}
                 showBoardNotation={true}

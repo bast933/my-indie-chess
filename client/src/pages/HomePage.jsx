@@ -30,9 +30,11 @@ export default function HomePage() {
     const [roomsLoading, setRoomsLoading] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [theme, setTheme] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('theme') || 'dark';
-        }
+        try {
+            if (typeof window !== 'undefined') {
+                return localStorage.getItem('theme') || 'dark';
+            }
+        } catch (e) {}
         return 'dark';
     });
 
@@ -42,7 +44,9 @@ export default function HomePage() {
         } else {
             document.documentElement.setAttribute('data-theme', theme);
         }
-        localStorage.setItem('theme', theme);
+        try {
+            localStorage.setItem('theme', theme);
+        } catch (e) {}
     }, [theme]);
 
     // Fetch rooms on mount and periodically

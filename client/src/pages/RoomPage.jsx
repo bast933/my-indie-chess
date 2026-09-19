@@ -24,6 +24,7 @@ import GameOverModal from '../components/GameOverModal';
 import MathChallengeModal from '../components/MathChallengeModal';
 import ChessClock from '../components/ChessClock';
 import { useStockfish } from '../hooks/useStockfish';
+import { usePieceTheme } from '../hooks/usePieceTheme';
 import './RoomPage.css';
 
 export default function RoomPage() {
@@ -43,11 +44,15 @@ export default function RoomPage() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [showGameOverModal, setShowGameOverModal] = useState(true);
     const [theme, setTheme] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('theme') || 'dark';
-        }
+        try {
+            if (typeof window !== 'undefined') {
+                return localStorage.getItem('theme') || 'dark';
+            }
+        } catch (e) {}
         return 'dark';
     });
+
+    const { pieceTheme, togglePieceTheme } = usePieceTheme();
 
     const {
         connected,
@@ -225,7 +230,9 @@ export default function RoomPage() {
         } else {
             document.documentElement.setAttribute('data-theme', theme);
         }
-        localStorage.setItem('theme', theme);
+        try {
+            localStorage.setItem('theme', theme);
+        } catch (e) {}
     }, [theme]);
 
     useEffect(() => {
@@ -407,6 +414,14 @@ export default function RoomPage() {
                         </button>
                     </div>
                     <div className="header-actions">
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={togglePieceTheme}
+                            title={pieceTheme === 'classic' ? 'Passa al set numerico (1, 3, 5...)' : 'Passa ai pezzi classici'}
+                            style={{ fontWeight: 700, fontSize: '0.8rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid var(--color-border)' }}
+                        >
+                            {pieceTheme === 'numeric' ? '🔢 Points' : '♔ Classic'}
+                        </button>
                         <button className="btn btn-ghost btn-icon btn-sm" onClick={toggleTheme}>
                             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
                         </button>
@@ -554,6 +569,7 @@ export default function RoomPage() {
                         isCheck={gameState.isCheck}
                         opponentConnected={opponentConnected}
                         suggestedMove={suggestedMove}
+                        pieceTheme={pieceTheme}
                     />
 
                     {/* Bottom Player Bar (Self) */}

@@ -12,6 +12,7 @@ import {
     Settings
 } from 'lucide-react';
 import { useComputerGame } from '../hooks/useComputerGame';
+import { usePieceTheme } from '../hooks/usePieceTheme';
 import ChessBoard from '../components/ChessBoard';
 import MoveList from '../components/MoveList';
 import ChessClock from '../components/ChessClock';
@@ -38,8 +39,9 @@ const DIFFICULTY_LEVELS = [
 ];
 
 // ─── Setup Screen ────────────────────────────────────────────────────────────
-function SetupScreen({ onStart, initialConfig }) {
+function SetupScreen({ onStart, initialConfig, pieceTheme, onTogglePieceTheme }) {
     const [color, setColor] = useState(initialConfig?.color || 'white');
+    const [selectedPieceTheme, setSelectedPieceTheme] = useState(pieceTheme || 'classic');
     const [diffIdx, setDiffIdx] = useState(() => {
         if (!initialConfig) return 2; // Intermediate
         const idx = DIFFICULTY_LEVELS.findIndex(d => d.depth === initialConfig.depth);
@@ -113,6 +115,27 @@ function SetupScreen({ onStart, initialConfig }) {
                             ))}
                         </select>
                     </div>
+
+                    {/* Piece Style */}
+                    <div className="setup-group">
+                        <label className="setup-label">Piece Style</label>
+                        <div className="color-picker">
+                            <button
+                                type="button"
+                                className={`color-btn ${selectedPieceTheme === 'classic' ? 'active' : ''}`}
+                                onClick={() => setSelectedPieceTheme('classic')}
+                            >
+                                ♔ Classic
+                            </button>
+                            <button
+                                type="button"
+                                className={`color-btn ${selectedPieceTheme === 'numeric' ? 'active' : ''}`}
+                                onClick={() => setSelectedPieceTheme('numeric')}
+                            >
+                                🔢 Points (1, 3, 5...)
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <button
@@ -120,7 +143,8 @@ function SetupScreen({ onStart, initialConfig }) {
                     onClick={() => onStart({
                         color,
                         depth: DIFFICULTY_LEVELS[diffIdx].depth,
-                        timeControl: TIME_OPTIONS[timeIdx]
+                        timeControl: TIME_OPTIONS[timeIdx],
+                        pieceTheme: selectedPieceTheme
                     })}
                 >
                     Start Game
@@ -131,7 +155,7 @@ function SetupScreen({ onStart, initialConfig }) {
 }
 
 // ─── Active Game Arena View ──────────────────────────────────────────────────
-function ComputerGameArena({ config, onBackToSetup }) {
+function ComputerGameArena({ config, pieceTheme, onBackToSetup }) {
     const navigate = useNavigate();
     const [showGameOver, setShowGameOver] = useState(true);
 
@@ -263,6 +287,7 @@ function ComputerGameArena({ config, onBackToSetup }) {
                         lastMove={game.moves[game.moves.length - 1]}
                         isCheck={game.isCheck}
                         opponentConnected={true}
+                        pieceTheme={pieceTheme}
                     />
 
                     {/* Bottom bar: Player */}
@@ -304,18 +329,30 @@ function ComputerGameArena({ config, onBackToSetup }) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function ComputerGamePage() {
     const navigate = useNavigate();
-    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+    const { pieceTheme, togglePieceTheme, setPieceTheme } = usePieceTheme();
+    const [theme, setTheme] = useState(() => {
+        try {
+            return localStorage.getItem('theme') || 'dark';
+        } catch (e) {
+            return 'dark';
+        }
+    });
     const [config, setConfig] = useState(null); // null = show setup
     const [gameKey, setGameKey] = useState(0);
 
     const toggleTheme = () => {
         const next = theme === 'dark' ? 'light' : 'dark';
         setTheme(next);
-        localStorage.setItem('theme', next);
+        try {
+            localStorage.setItem('theme', next);
+        } catch (e) {}
         document.documentElement.setAttribute('data-theme', next);
     };
 
     const handleStart = (cfg) => {
+        if (cfg.pieceTheme) {
+            setPieceTheme(cfg.pieceTheme);
+        }
         setConfig(cfg);
         setGameKey(k => k + 1);
     };
@@ -332,18 +369,29 @@ export default function ComputerGamePage() {
                     <Bot size={18} />
                     vs Computer
                 </span>
-                <button className="btn btn-ghost btn-icon" onClick={toggleTheme}>
-                    {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={togglePieceTheme}
+                        title={pieceTheme === 'classic' ? 'Passa al set numerico (1, 3, 5...)' : 'Passa ai pezzi classici'}
+                        style={{ fontWeight: 700, fontSize: '0.85rem', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--color-border)' }}
+                    >
+                        {pieceTheme === 'numeric' ? '🔢 Points' : '♔ Classic'}
+                    </button>
+                    <button className="btn btn-ghost btn-icon" onClick={toggleTheme}>
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                </div>
             </header>
 
             {/* Setup screen overlay */}
             {!config ? (
-                <SetupScreen onStart={handleStart} initialConfig={config} />
+                <SetupScreen onStart={handleStart} initialConfig={config} pieceTheme={pieceTheme} onTogglePieceTheme={togglePieceTheme} />
             ) : (
                 <ComputerGameArena
                     key={gameKey}
                     config={config}
+                    pieceTheme={pieceTheme}
                     onBackToSetup={() => setConfig(null)}
                 />
             )}
